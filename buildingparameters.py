@@ -46,6 +46,7 @@ def hight_of_object(coords):
     return c, coords_max
 
 
+
 def create_edges_from_list_of_connection(connection):
     edges = []
     for i in connection:
@@ -53,9 +54,7 @@ def create_edges_from_list_of_connection(connection):
         for i[0] in i:
             for a in i:
                 if i[0] != a:
-                    pks = []
-                    pks.append(i[0])
-                    pks.append(a)
+                    pks=(i[0],a)
                     edges.append(pks)
 
     return (edges)
