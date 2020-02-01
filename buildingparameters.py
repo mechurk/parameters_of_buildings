@@ -5,8 +5,20 @@ from shapely.geometry import Polygon
 from lxml import etree
 import markup3dmodule
 
-#TODO osetrit fce
-#TODO citovat pouzite casti skriptu
+# TODO osetrit fce
+# TODO citovat pouzite casti skriptu
+# --------------------------------------------------------------#
+# dictionaries
+roof_types = {}
+num_storeys = {}
+body_volume = {}
+roof_volume = {}
+building_volume = {}
+building_height = {}
+roof_height = {}
+body_height = {}
+
+
 # --------------------------------------------------------------#
 # funcions
 
@@ -32,8 +44,25 @@ def hight_of_object(coords):
     c = abs(zcoords[1] - zcoords[0])
     coords_max = zcoords[-1]
     return c, coords_max
+
+
+def create_edges_from_list_of_connection(connection):
+    edges = []
+    for i in connection:
+
+        for i[0] in i:
+            for a in i:
+                if i[0] != a:
+                    pks = []
+                    pks.append(i[0])
+                    pks.append(a)
+                    edges.append(pks)
+
+    return (edges)
+
+
 # --------------------------------------------------------------#
-#IN OOP
+# IN OOP
 def parameters_of_footprint(footprintcoords):
     """In the list of lists of foodprint coordinates return side a,b and its area"""
     # TODO ohlidat aby souradnice obsahovaly pouze hodnoty obdelniku, aby byli na vstupu v souradnicich duplicitni hodnoty - zaokrouhlovani
@@ -50,25 +79,24 @@ def parameters_of_footprint(footprintcoords):
         ycoords_duplicate.append(i[1])
     ycoords = remove_duplicate(ycoords_duplicate)
 
-    if len(xcoords) ==2 & len(ycoords)==2:
+    if len(xcoords) == 2 & len(ycoords) == 2:
         a = abs(xcoords[0] - xcoords[1])
         b = abs(ycoords[0] - ycoords[1])
         area = a * b
-    elif 2<len(xcoords) <=4 or 2<len(ycoords)<=4:
-        a1=abs(xcoords[0]-xcoords[1])
+    elif 2 < len(xcoords) <= 4 or 2 < len(ycoords) <= 4:
+        a1 = abs(xcoords[0] - xcoords[1])
         a2 = abs(xcoords[1] - xcoords[2])
-        b1=abs(ycoords[0]-ycoords[1])
+        b1 = abs(ycoords[0] - ycoords[1])
         b2 = abs(ycoords[1] - ycoords[2])
-        a=math.sqrt((a1*a1)+(b1*b1))
-        b=math.sqrt((a2*a2)+(b2*b2))
-        area= a*b
+        a = math.sqrt((a1 * a1) + (b1 * b1))
+        b = math.sqrt((a2 * a2) + (b2 * b2))
+        area = a * b
     else:
         print "Polygon contain more than 4 vertices, not valid"
-        #TODO jak to zakoncit
-        a=0
-        b=0
-        area =0
-
+        # TODO jak to zakoncit
+        a = 0
+        b = 0
+        area = 0
 
     zcoords_duplicate = []
     for i in footprintcoords:
@@ -90,10 +118,8 @@ def bodyvolume(wallcoords, footprintcoords):
     return volume
 
 
-
-
-#roofvolume = 0
-#rooftype = ['gabled']
+# roofvolume = 0
+# rooftype = ['gabled']
 
 
 def roofvolume(footprintcoords, rooftype, roofcoords):
@@ -102,11 +128,11 @@ def roofvolume(footprintcoords, rooftype, roofcoords):
     list_coords = []
     roof_up = []
     roof_down = []
-    c=0
+    c = 0
     for roof in rooftype:
         if roof == "Flat":
             roofvolume = 0
-            c=0
+            c = 0
         elif roof == 'Shed' or 'Gabled':
             c, coords_max = hight_of_object(roofcoords)
             a, b, z, area = parameters_of_footprint(footprintcoords)
@@ -125,7 +151,7 @@ def roofvolume(footprintcoords, rooftype, roofcoords):
                 if b[2] == coords_max:
                     roof_up.append(b)
                 else:
-                    roof_down.append(b) #nedavala jsem i
+                    roof_down.append(b)  # nedavala jsem i
 
             au = abs(roof_up[0][0] - roof_up[1][0])
             bu = abs(roof_up[0][1] - roof_up[1][1])
@@ -147,38 +173,43 @@ def roofvolume(footprintcoords, rooftype, roofcoords):
     return roofvolume, c
 
 
-def allvolume(roofvolume,bodyvolume):
+def allvolume(roofvolume, bodyvolume):
     """Return a volume of all building"""
-    roofvolume,c = roofvolume(footprintcoords, rooftype, roofcoords)
+    roofvolume, c = roofvolume(footprintcoords, rooftype, roofcoords)
     bodyvolume = bodyvolume(wallcoords, footprintcoords)
-    return roofvolume+bodyvolume
+    return roofvolume + bodyvolume
 
 
-def neighbour_buildings(footprintcoords,anotherbuild):
+def neighbour_buildings(footprintcoords, anotherbuild):
     """Try to find neighbours buildings and return their ID"""
     building_ID = []
     neighbours_ID = []
     for i in anotherbuild:
-        building_ID=i[0][0]
+        building_ID = i[0][0]
         coord_build = i[1]
 
+        a, b, z, area = parameters_of_footprint(footprintcoords)
+        bv = (a + b) / 5
+        ma = (a * b) / 1.5
+        # print bv
 
         poly1 = Polygon(footprintcoords)
         poly2 = Polygon(coord_build)
 
-        buffer_value = 0.2
-        minimum_area = 0
+        buffer_value = 0.5
+        minimum_area = 1
         p1 = poly1.buffer(buffer_value)
         p2 = poly2.buffer(buffer_value)
 
         validate = p1.intersection(p2).area
-        #print validate
+        # print "val:",validate
         if validate > minimum_area:
             neighbours_ID.append(building_ID)
     return neighbours_ID
 
+
 # --------------------------------------------------------------#
-#importing xml files
+# importing xml files
 # -- Name spaces
 ns_citygml = "http://www.opengis.net/citygml/2.0"
 
@@ -213,7 +244,7 @@ nsmap = {
     'brid': ns_brid,
     'app': ns_app
 }
-#calling xml
+# calling xml
 FULLPATH = "D:\Dokumenty\Diplomka\GML_OBJ\soubory\export_dogml_pokus22.xml"
 
 CITYGML = etree.parse(FULLPATH)
@@ -221,32 +252,29 @@ root = CITYGML.getroot()
 cityObjects = []
 buildings = []
 
-
-#-- Find all instances of cityObjectMember and put them in a list
-for obj in root.getiterator('{%s}cityObjectMember'% ns_citygml):
+# -- Find all instances of cityObjectMember and put them in a list
+for obj in root.getiterator('{%s}cityObjectMember' % ns_citygml):
     cityObjects.append(obj)
 
-
 print "\tThere are", len(cityObjects), "cityObject(s) in this CityGML file"
-#find only Building
+# find only Building
 
 for cityObject in cityObjects:
     for child in cityObject.getchildren():
-        if child.tag == '{%s}Building' %ns_bldg:
+        if child.tag == '{%s}Building' % ns_bldg:
             buildings.append(child)
 
-    #-- Store the buildings as classes
+    # -- Store the buildings as classes
 FILENAME = 'export_dogml_pokus22_BD'
 
-
-#create list with footprint and ID of building
-anotherbuilding=[]
+# create list with footprint and ID of building
+anotherbuilding = []
 for b in buildings:
-    #establish variables
+    # establish variables
     anotherbuilding_pre = []
-    footprintcoords1=[]
+    footprintcoords1 = []
     ids = []
-    id = b.attrib['{%s}id' %ns_gml]
+    id = b.attrib['{%s}id' % ns_gml]
     ids.append(id)
     ground_walls1 = []
 
@@ -259,33 +287,32 @@ for b in buildings:
 
     for surface in ground_walls1:
         for w in surface.findall('.//{%s}Polygon' % ns_gml):
-            a= markup3dmodule.GMLpoints(w)
+            a = markup3dmodule.GMLpoints(w)
             footprintcoords1 = a
 
     anotherbuilding_pre.append(ids)
     anotherbuilding_pre.append(footprintcoords1)
     anotherbuilding.append(anotherbuilding_pre)
 
-#finding parameters of building
+bld_nb = []
+# finding parameters of building
 for b in buildings:
     ground_walls = []
-    walls=[]
+    walls = []
     roof_walls = []
     footprintcoords = []
-    wallcoords= []
-    roofcoords=[]
-    ids=[]
-    rooftype=[]
-    storeys=[]
-    id = b.attrib['{%s}id' %ns_gml]
+    wallcoords = []
+    roofcoords = []
+    ids = []
+    rooftype = []
+    storeys = []
+    id = b.attrib['{%s}id' % ns_gml]
     ids.append(id)
-
 
     if any(FILENAME in s for s in ids):
         break
 
-
-    #finding and sorting surfaces
+    # finding and sorting surfaces
     for child in b.getiterator():
         if child.tag == '{%s}GroundSurface' % ns_bldg:
             ground_walls.append(child)
@@ -298,56 +325,75 @@ for b in buildings:
         elif child.tag == '{%s}storeysAboveGround' % ns_bldg:
             storeys.append(child.text)
 
-    #finding polygon and his coords
+    # finding polygon and his coords
 
     for surface in ground_walls:
         for w in surface.findall('.//{%s}Polygon' % ns_gml):
-            a= markup3dmodule.GMLpoints(w)
-            footprintcoords=a
-
+            a = markup3dmodule.GMLpoints(w)
+            footprintcoords = a
 
     for surface in walls:
         for w in surface.findall('.//{%s}Polygon' % ns_gml):
-            a= markup3dmodule.GMLpoints(w)
+            a = markup3dmodule.GMLpoints(w)
             wallcoords.append(a)
-
 
     for surface in roof_walls:
         for w in surface.findall('.//{%s}Polygon' % ns_gml):
-            a= markup3dmodule.GMLpoints(w)
+            a = markup3dmodule.GMLpoints(w)
             roofcoords.append(a)
 
+    # call functions
+    clear_nb = []
+    bv = str()
+    bv = bodyvolume(wallcoords, footprintcoords)
+    av = allvolume(roofvolume, bodyvolume)
+    a, b, z, area = parameters_of_footprint(footprintcoords)
+    rv, hr = roofvolume(footprintcoords, rooftype, roofcoords)
+    nb = neighbour_buildings(footprintcoords, anotherbuilding)
+    hb, cw_max = hight_of_object(wallcoords)
+    # hr,cr_max=hight_of_object(roofcoords)
+    h_all = hb + hr
 
-#call functions
-    clear_nb=[]
-    bv=bodyvolume(wallcoords, footprintcoords)
-    av=allvolume(roofvolume, bodyvolume)
-    a,b,z,area=parameters_of_footprint(footprintcoords)
-    rv,hr=roofvolume(footprintcoords, rooftype, roofcoords)
-    nb= neighbour_buildings(footprintcoords, anotherbuilding)
-    hb,cw_max=hight_of_object(wallcoords)
-    #hr,cr_max=hight_of_object(roofcoords)
-    h_all=hb+hr
-
-
-
-    #cleaning ID of selected building from list of the neigbour buildings
+    # bld_nb.append(nb)
+    # cleaning ID of selected building from list of the neigbour buildings
     for som in nb:
         if som != id:
             clear_nb.append(som)
-
 
     print ids
     print rooftype
     print footprintcoords
     print wallcoords
     print roofcoords
-    print a,b,z,area
+    print a, b, z, area
     print bv
     print rv
     print av
     print clear_nb
     print h_all
     print storeys
+    bld_nb2 = []
+    bld_nb2.append(ids[0])
+    for jop in clear_nb:
+        bld_nb2.append(jop)
+    bld_nb.append(bld_nb2)
 
+    roof_types[ids[0]] = rooftype[0]  # zkontrolovat jestli opravdu pouzivat IDs nebo jen ID
+    num_storeys[ids[0]] = storeys[0]
+    body_volume[ids[0]] = bv
+    roof_volume[ids[0]] = rv
+    building_volume[ids[0]] = av
+    building_height[ids[0]] = hb
+    roof_height[ids[0]] = hr
+    body_height[ids[0]] = h_all
 
+print "bld_nb=", bld_nb
+print "roof_types=", roof_types
+print "num_storeys=", num_storeys
+print "body_volume=", body_volume
+print "roof_volume=", roof_volume
+print "building_volume=", building_volume
+print "building_height=", building_height
+print "roof_height=", roof_height
+print "body_height=", body_height
+print "edges=", create_edges_from_list_of_connection(bld_nb)
