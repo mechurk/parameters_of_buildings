@@ -17,6 +17,7 @@ building_volume = {}
 building_height = {}
 roof_height = {}
 body_height = {}
+roof_orientation = {}
 
 
 # --------------------------------------------------------------#
@@ -46,7 +47,6 @@ def hight_of_object(coords):
     return c, coords_max
 
 
-
 def create_edges_from_list_of_connection(connection):
     edges = []
     for i in connection:
@@ -54,7 +54,9 @@ def create_edges_from_list_of_connection(connection):
         for i[0] in i:
             for a in i:
                 if i[0] != a:
-                    pks=(i[0],a)
+                    # pks = []
+                    pks = (i[0], a)
+
                     edges.append(pks)
 
     return (edges)
@@ -121,54 +123,63 @@ def bodyvolume(wallcoords, footprintcoords):
 # rooftype = ['gabled']
 
 
-def roofvolume(footprintcoords, rooftype, roofcoords):
+def roof_volumes(footprintcoords, rooftype, roofcoords):
     """Return a volume of the roof"""
-    roofvolume = []
+    roofvolume = 0
     list_coords = []
     roof_up = []
     roof_down = []
+    list_coords_dupl = []
     c = 0
-    for roof in rooftype:
-        if roof == "Flat":
-            roofvolume = 0
-            c = 0
-        elif roof == 'Shed' or 'Gabled':
-            c, coords_max = hight_of_object(roofcoords)
-            a, b, z, area = parameters_of_footprint(footprintcoords)
-            roofvolume = (a * b * c) / 2
-        elif roof == "Pyramidal":
-            c, coords_max = hight_of_object(roofcoords)
-            a, b, z, area = parameters_of_footprint(footprintcoords)
-            roofvolume = (a * b * c) / 3
-        elif roof == "Hipped":
-            c, coords_max = hight_of_object(roofcoords)
-            a, b, z, area = parameters_of_footprint(footprintcoords)
-            for i in roofcoords:
-                if len(i) == 4:
-                    list_coords.append(i[0])
-            if b in list_coords:
-                if b[2] == coords_max:
-                    roof_up.append(b)
-                else:
-                    roof_down.append(b)  # nedavala jsem i
+    # for roof in rooftype:
+    if rooftype[0] == "Flat":
+        roofvolume = 0
+        c = 0
+    elif rooftype[0] == 'Shed':
+        c, coords_max = hight_of_object(roofcoords)
+        a, b, z, area = parameters_of_footprint(footprintcoords)
+        roofvolume = (a * b * c) / 2
+    elif rooftype[0] == 'Gabled':
+        c, coords_max = hight_of_object(roofcoords)
+        a, b, z, area = parameters_of_footprint(footprintcoords)
+        roofvolume = (a * b * c) / 2
+    elif rooftype[0] == "Pyramidal":
+        c, coords_max = hight_of_object(roofcoords)
+        a, b, z, area = parameters_of_footprint(footprintcoords)
+        print a, b, z, area
+        roofvolume = (a * b * c) / 3
+    elif rooftype[0] == "Hipped":
+        c, coords_max = hight_of_object(roofcoords)
+        a, b, z, area = parameters_of_footprint(footprintcoords)
+        for i in roofcoords:
+            if len(i) == 5:
+                list_coords_dupl = i
+        for k in list_coords_dupl:
+            if k not in list_coords:
+                list_coords.append(k)
+        for u in list_coords:
+            if u[2] == coords_max:
+                roof_up.append(u)
+            else:
+                roof_down.append(u)  # nedavala jsem i
 
-            au = abs(roof_up[0][0] - roof_up[1][0])
-            bu = abs(roof_up[0][1] - roof_up[1][1])
-            a_smaller = math.sqrt((au * au) + (bu * bu))
+        au = abs(roof_up[0][0] - roof_up[1][0])
+        bu = abs(roof_up[0][1] - roof_up[1][1])
+        a_smaller = math.sqrt((au * au) + (bu * bu))
 
-            ad = abs(roof_down[0][0] - roof_down[1][0])
-            bd = abs(roof_down[0][1] - roof_down[1][1])
-            a_longer = math.sqrt((ad * ad) + (bd * bd))
+        ad = abs(roof_down[0][0] - roof_down[1][0])
+        bd = abs(roof_down[0][1] - roof_down[1][1])
+        a_longer = math.sqrt((ad * ad) + (bd * bd))
 
-            if not a_longer == a:
-                b = a
-                a = a_longer
-            print a, b
-            num = (2 * a + a_smaller)
-            roofvolume = (1 / 6) * b * c * num
+        if not a_longer == a:
+            b = a
+            a = a_longer
+        print a, b
+        num = (2 * a + a_smaller)
+        roofvolume = (b * c * num) / 6
 
-        else:
-            print "unnamed roof type"
+    else:
+        print "unnamed roof type"
     return roofvolume, c
 
 
@@ -205,6 +216,64 @@ def neighbour_buildings(footprintcoords, anotherbuild):
         if validate > minimum_area:
             neighbours_ID.append(building_ID)
     return neighbours_ID
+
+
+def rooforientation(footprintcoords, rooftype, roofcoords):
+    # Return a volume of the roof
+    roof_orientation = 0
+    max_edge = []
+    list_coords = []
+    roof_up = []
+    roof_down = []
+    c = 0
+    for roof in rooftype:
+        if roof == "Flat":
+            roof_orientation = 0
+
+        elif roof == 'Shed' or 'Gabled':
+            c, coords_max = hight_of_object(roofcoords)
+            for sublist in roofcoords:
+                if sublist[2] == coords_max:
+                    max_edge.append(sublist)
+
+            a, b, z, area = parameters_of_footprint(footprintcoords)
+            roofvolume = (a * b * c) / 2
+        elif roof == "Pyramidal":
+            roof_orientation = 0
+        elif roof == "Hipped":
+            c, coords_max = hight_of_object(roofcoords)
+            for sublist in roofcoords:
+                if sublist[2] == coords_max:
+                    max_edge.append(sublist)
+
+            a, b, z, area = parameters_of_footprint(footprintcoords)
+            for i in roofcoords:
+                if len(i) == 4:
+                    list_coords.append(i[0])
+            if b in list_coords:
+                if b[2] == coords_max:
+                    roof_up.append(b)
+                else:
+                    roof_down.append(b)  # nedavala jsem i
+
+            au = abs(roof_up[0][0] - roof_up[1][0])
+            bu = abs(roof_up[0][1] - roof_up[1][1])
+            a_smaller = math.sqrt((au * au) + (bu * bu))
+
+            ad = abs(roof_down[0][0] - roof_down[1][0])
+            bd = abs(roof_down[0][1] - roof_down[1][1])
+            a_longer = math.sqrt((ad * ad) + (bd * bd))
+
+            if not a_longer == a:
+                b = a
+                a = a_longer
+            print a, b
+            num = (2 * a + a_smaller)
+            roofvolume = (1 / 6) * b * c * num
+
+        else:
+            print "unnamed roof type"
+    return roof_orientation
 
 
 # --------------------------------------------------------------#
@@ -345,13 +414,14 @@ for b in buildings:
     clear_nb = []
     bv = str()
     bv = bodyvolume(wallcoords, footprintcoords)
-    av = allvolume(roofvolume, bodyvolume)
+    av = allvolume(roof_volumes, bodyvolume)
     a, b, z, area = parameters_of_footprint(footprintcoords)
-    rv, hr = roofvolume(footprintcoords, rooftype, roofcoords)
+    rv, hr = roof_volumes(footprintcoords, rooftype, roofcoords)
     nb = neighbour_buildings(footprintcoords, anotherbuilding)
     hb, cw_max = hight_of_object(wallcoords)
     # hr,cr_max=hight_of_object(roofcoords)
     h_all = hb + hr
+    # rfo=rooforientation(footprintcoords, rooftype, roofcoords)
 
     # bld_nb.append(nb)
     # cleaning ID of selected building from list of the neigbour buildings
@@ -369,8 +439,11 @@ for b in buildings:
     print rv
     print av
     print clear_nb
+    print hb
+    print hr
     print h_all
     print storeys
+    # print rfo
     bld_nb2 = []
     bld_nb2.append(ids[0])
     for jop in clear_nb:
@@ -385,6 +458,7 @@ for b in buildings:
     building_height[ids[0]] = hb
     roof_height[ids[0]] = hr
     body_height[ids[0]] = h_all
+    # roof_orientation[ids[0]] = rfo
 
 print "bld_nb=", bld_nb
 print "roof_types=", roof_types
