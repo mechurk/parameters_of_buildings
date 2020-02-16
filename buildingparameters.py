@@ -18,6 +18,7 @@ building_height = {}
 roof_height = {}
 body_height = {}
 roof_orientation = {}
+roof_volume_constant = {}
 
 
 # --------------------------------------------------------------#
@@ -25,6 +26,7 @@ roof_orientation = {}
 
 def remove_duplicate(duplicate_list):
     """Removes duplicates values in the input list"""
+    # in list of lists removing duplicate list include
     final_list = []
     for num in duplicate_list:
         if num not in final_list:
@@ -42,8 +44,9 @@ def hight_of_object(coords):
             zcoords = remove_duplicate(zcoords_duplicate)
 
     zcoords.sort()
-    c = abs(zcoords[1] - zcoords[0])
-    coords_max = zcoords[-1]
+    c = abs(zcoords[1] - zcoords[
+        0])  # if there is 3 variables in list find first one (because gabled roof have wall up to roof)
+    coords_max = zcoords[-1]  # return max z coords
     return c, coords_max
 
 
@@ -222,57 +225,93 @@ def rooforientation(footprintcoords, rooftype, roofcoords):
     # Return a volume of the roof
     roof_orientation = 0
     max_edge = []
+    parallel_edge = []
     list_coords = []
     roof_up = []
     roof_down = []
     c = 0
-    for roof in rooftype:
-        if roof == "Flat":
-            roof_orientation = 0
 
-        elif roof == 'Shed' or 'Gabled':
-            c, coords_max = hight_of_object(roofcoords)
-            for sublist in roofcoords:
-                if sublist[2] == coords_max:
-                    max_edge.append(sublist)
+    if rooftype[0] == "Flat":
+        roof_orientation = 0
 
-            a, b, z, area = parameters_of_footprint(footprintcoords)
-            roofvolume = (a * b * c) / 2
-        elif roof == "Pyramidal":
-            roof_orientation = 0
-        elif roof == "Hipped":
-            c, coords_max = hight_of_object(roofcoords)
-            for sublist in roofcoords:
-                if sublist[2] == coords_max:
-                    max_edge.append(sublist)
+    elif rooftype[0] == 'Shed':
+        c, coords_max = hight_of_object(roofcoords)
+        one_roof_polygon_duplicate = roofcoords[
+            0]  # expect that gabled roof have only two shape with same max roof line
+        one_roof_polygon = remove_duplicate(one_roof_polygon_duplicate)  # clear duplicates
+        for vertex in one_roof_polygon:
+            if vertex[2] == coords_max:
+                max_edge.append(vertex)
+            else:
+                parallel_edge.append(vertex)
+        difference_x = abs(max_edge[0][0] - max_edge[1][0])
+        difference_y = abs(max_edge[0][1] - max_edge[1][1])
 
-            a, b, z, area = parameters_of_footprint(footprintcoords)
-            for i in roofcoords:
-                if len(i) == 4:
-                    list_coords.append(i[0])
-            if b in list_coords:
-                if b[2] == coords_max:
-                    roof_up.append(b)
-                else:
-                    roof_down.append(b)  # nedavala jsem i
-
-            au = abs(roof_up[0][0] - roof_up[1][0])
-            bu = abs(roof_up[0][1] - roof_up[1][1])
-            a_smaller = math.sqrt((au * au) + (bu * bu))
-
-            ad = abs(roof_down[0][0] - roof_down[1][0])
-            bd = abs(roof_down[0][1] - roof_down[1][1])
-            a_longer = math.sqrt((ad * ad) + (bd * bd))
-
-            if not a_longer == a:
-                b = a
-                a = a_longer
-            print a, b
-            num = (2 * a + a_smaller)
-            roofvolume = (1 / 6) * b * c * num
-
+        if difference_x == 0 and difference_y != 0:
+            difference_parallel_x = parallel_edge[0][0] - max_edge[0][0]  # lower edge-higher edge
+            if difference_parallel_x < 0:
+                roof_orientation = 90
+            elif difference_parallel_x > 0:
+                roof_orientation = 270
+            else:
+                roof_orientation = 999
+        elif difference_x != 0 and difference_y == 0:
+            difference_parallel_x = parallel_edge[0][1] - max_edge[0][1]  # lower edge-higher edge
+            if difference_parallel_x < 0:
+                roof_orientation = 180
+            elif difference_parallel_x > 0:
+                roof_orientation = 0
+            else:
+                roof_orientation = 999
         else:
-            print "unnamed roof type"
+            roof_orientation = 9999
+
+
+    elif rooftype[0] == 'Gabled':
+        c, coords_max = hight_of_object(roofcoords)
+        one_roof_polygon_duplicate = roofcoords[
+            0]  # expect that gabled roof have only two shape with same max roof line
+        one_roof_polygon = remove_duplicate(one_roof_polygon_duplicate)  # clear duplicates
+        for vertex in one_roof_polygon:
+            if vertex[2] == coords_max:
+                max_edge.append(vertex)
+        difference_x = abs(max_edge[0][0] - max_edge[1][0])
+        difference_y = abs(max_edge[0][1] - max_edge[1][1])
+
+        if difference_x == 0 and difference_y != 0:
+            roof_orientation = 90
+        elif difference_x != 0 and difference_y == 0:
+            roof_orientation = 0
+        else:
+            roof_orientation = 9999
+
+
+    elif rooftype[0] == "Pyramidal":
+        roof_orientation = 0
+
+    elif rooftype[0] == "Hipped":
+        c, coords_max = hight_of_object(roofcoords)
+        for sublist in roofcoords:
+            if len(sublist) == 5:
+                one_roof_polygon_duplicate = sublist
+        one_roof_polygon = remove_duplicate(one_roof_polygon_duplicate)  # clear duplicates
+        for vertex in one_roof_polygon:
+            if vertex[2] == coords_max:
+                max_edge.append(vertex)
+        difference_x = abs(max_edge[0][0] - max_edge[1][0])
+        difference_y = abs(max_edge[0][1] - max_edge[1][1])
+
+        if difference_x == 0 and difference_y != 0:
+            roof_orientation = 90
+        elif difference_x != 0 and difference_y == 0:
+            roof_orientation = 0
+        else:
+            roof_orientation = 9999
+
+
+    else:
+        print "unnamed roof type"
+
     return roof_orientation
 
 
@@ -421,7 +460,12 @@ for b in buildings:
     hb, cw_max = hight_of_object(wallcoords)
     # hr,cr_max=hight_of_object(roofcoords)
     h_all = hb + hr
-    # rfo=rooforientation(footprintcoords, rooftype, roofcoords)
+    rfo = rooforientation(footprintcoords, rooftype, roofcoords)
+
+    if rv != 0 and hr != 0:
+        rvc = rv / hr
+    else:
+        rvc = 0
 
     # bld_nb.append(nb)
     # cleaning ID of selected building from list of the neigbour buildings
@@ -443,7 +487,8 @@ for b in buildings:
     print hr
     print h_all
     print storeys
-    # print rfo
+    print rfo
+    print rvc
     bld_nb2 = []
     bld_nb2.append(ids[0])
     for jop in clear_nb:
@@ -458,7 +503,8 @@ for b in buildings:
     building_height[ids[0]] = hb
     roof_height[ids[0]] = hr
     body_height[ids[0]] = h_all
-    # roof_orientation[ids[0]] = rfo
+    roof_orientation[ids[0]] = rfo
+    roof_volume_constant[ids[0]] = rvc
 
 print "bld_nb=", bld_nb
 print "roof_types=", roof_types
@@ -470,3 +516,5 @@ print "building_height=", building_height
 print "roof_height=", roof_height
 print "body_height=", body_height
 print "edges=", create_edges_from_list_of_connection(bld_nb)
+print "roof_orientation=", roof_orientation
+print "roof_volume_constant=", roof_volume_constant
