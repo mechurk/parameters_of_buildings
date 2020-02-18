@@ -10,6 +10,7 @@ import markup3dmodule
 # --------------------------------------------------------------#
 # dictionaries
 roof_types = {}
+roof_types_number = {}
 num_storeys = {}
 body_volume = {}
 roof_volume = {}
@@ -19,7 +20,7 @@ roof_height = {}
 body_height = {}
 roof_orientation = {}
 roof_volume_constant = {}
-
+building_ids=[]
 
 # --------------------------------------------------------------#
 # funcions
@@ -44,8 +45,8 @@ def hight_of_object(coords):
             zcoords = remove_duplicate(zcoords_duplicate)
 
     zcoords.sort()
-    c = abs(zcoords[1] - zcoords[
-        0])  # if there is 3 variables in list find first one (because gabled roof have wall up to roof)
+    c = abs(zcoords[1] - zcoords[0])
+    # if there is 3 variables in list find first one (because gabled roof have wall up to roof)
     coords_max = zcoords[-1]  # return max z coords
     return c, coords_max
 
@@ -314,7 +315,25 @@ def rooforientation(footprintcoords, rooftype, roofcoords):
 
     return roof_orientation
 
+def roof_types_num(rooftype ):
+    """Return a volume of the roof"""
+    roofvolume = 0
 
+    # for roof in rooftype:
+    if rooftype[0] == "Flat":
+        roof_type_number = 2
+    elif rooftype[0] == 'Shed':
+        roof_type_number = 3
+    elif rooftype[0] == 'Gabled':
+        roof_type_number = 4
+    elif rooftype[0] == "Pyramidal":
+        roof_type_number = 1
+    elif rooftype[0] == "Hipped":
+        roof_type_number = 5
+
+    else:
+        print "unnamed roof type"
+    return roof_type_number
 # --------------------------------------------------------------#
 # importing xml files
 # -- Name spaces
@@ -352,7 +371,7 @@ nsmap = {
     'app': ns_app
 }
 # calling xml
-FULLPATH = "D:\Dokumenty\Diplomka\GML_OBJ\soubory\export_dogml_pokus22.xml"
+FULLPATH = "D:\Dokumenty\Diplomka\GML_OBJ\soubory\jeden_blok_2_pks.xml"
 
 CITYGML = etree.parse(FULLPATH)
 root = CITYGML.getroot()
@@ -400,7 +419,7 @@ for b in buildings:
     anotherbuilding_pre.append(ids)
     anotherbuilding_pre.append(footprintcoords1)
     anotherbuilding.append(anotherbuilding_pre)
-
+print anotherbuilding
 bld_nb = []
 # finding parameters of building
 for b in buildings:
@@ -451,7 +470,7 @@ for b in buildings:
 
     # call functions
     clear_nb = []
-    bv = str()
+
     bv = bodyvolume(wallcoords, footprintcoords)
     av = allvolume(roof_volumes, bodyvolume)
     a, b, z, area = parameters_of_footprint(footprintcoords)
@@ -461,6 +480,7 @@ for b in buildings:
     # hr,cr_max=hight_of_object(roofcoords)
     h_all = hb + hr
     rfo = rooforientation(footprintcoords, rooftype, roofcoords)
+    rtn=roof_types_num(rooftype)
 
     if rv != 0 and hr != 0:
         rvc = rv / hr
@@ -469,6 +489,7 @@ for b in buildings:
 
     # bld_nb.append(nb)
     # cleaning ID of selected building from list of the neigbour buildings
+
     for som in nb:
         if som != id:
             clear_nb.append(som)
@@ -489,11 +510,14 @@ for b in buildings:
     print storeys
     print rfo
     print rvc
+
     bld_nb2 = []
     bld_nb2.append(ids[0])
     for jop in clear_nb:
         bld_nb2.append(jop)
     bld_nb.append(bld_nb2)
+
+    building_ids.append (ids)
 
     roof_types[ids[0]] = rooftype[0]  # zkontrolovat jestli opravdu pouzivat IDs nebo jen ID
     num_storeys[ids[0]] = storeys[0]
@@ -505,9 +529,12 @@ for b in buildings:
     body_height[ids[0]] = h_all
     roof_orientation[ids[0]] = rfo
     roof_volume_constant[ids[0]] = rvc
+    roof_types_number[ids[0]] = rtn
 
+print "building_ids=", building_ids
 print "bld_nb=", bld_nb
 print "roof_types=", roof_types
+print "roof_types_number=",roof_types_number
 print "num_storeys=", num_storeys
 print "body_volume=", body_volume
 print "roof_volume=", roof_volume
@@ -518,3 +545,5 @@ print "body_height=", body_height
 print "edges=", create_edges_from_list_of_connection(bld_nb)
 print "roof_orientation=", roof_orientation
 print "roof_volume_constant=", roof_volume_constant
+
+print len (building_ids)
