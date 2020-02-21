@@ -20,7 +20,9 @@ roof_height = {}
 body_height = {}
 roof_orientation = {}
 roof_volume_constant = {}
-building_ids=[]
+building_ids = []
+footprints = {}
+
 
 # --------------------------------------------------------------#
 # funcions
@@ -315,7 +317,8 @@ def rooforientation(footprintcoords, rooftype, roofcoords):
 
     return roof_orientation
 
-def roof_types_num(rooftype ):
+
+def roof_types_num(rooftype):
     """Return a volume of the roof"""
     roofvolume = 0
 
@@ -334,6 +337,8 @@ def roof_types_num(rooftype ):
     else:
         print "unnamed roof type"
     return roof_type_number
+
+
 # --------------------------------------------------------------#
 # importing xml files
 # -- Name spaces
@@ -480,7 +485,7 @@ for b in buildings:
     # hr,cr_max=hight_of_object(roofcoords)
     h_all = hb + hr
     rfo = rooforientation(footprintcoords, rooftype, roofcoords)
-    rtn=roof_types_num(rooftype)
+    rtn = roof_types_num(rooftype)
 
     if rv != 0 and hr != 0:
         rvc = rv / hr
@@ -517,7 +522,7 @@ for b in buildings:
         bld_nb2.append(jop)
     bld_nb.append(bld_nb2)
 
-    building_ids.append (ids)
+    building_ids.append(ids[0])
 
     roof_types[ids[0]] = rooftype[0]  # zkontrolovat jestli opravdu pouzivat IDs nebo jen ID
     num_storeys[ids[0]] = storeys[0]
@@ -530,20 +535,24 @@ for b in buildings:
     roof_orientation[ids[0]] = rfo
     roof_volume_constant[ids[0]] = rvc
     roof_types_number[ids[0]] = rtn
+    footprints[ids[0]] = area
 
 print "building_ids=", building_ids
+print "heights=", body_height
+print "footprints=", footprints
+print "edges=", create_edges_from_list_of_connection(bld_nb)
+print "roof_types=", roof_types_number
+print "roof_heights=", roof_height
+print "roof_volume_constant=", roof_volume_constant
+print "roof_orientation=", roof_orientation
+print ""
+
 print "bld_nb=", bld_nb
 print "roof_types=", roof_types
-print "roof_types_number=",roof_types_number
 print "num_storeys=", num_storeys
 print "body_volume=", body_volume
 print "roof_volume=", roof_volume
 print "building_volume=", building_volume
 print "building_height=", building_height
-print "roof_height=", roof_height
-print "body_height=", body_height
-print "edges=", create_edges_from_list_of_connection(bld_nb)
-print "roof_orientation=", roof_orientation
-print "roof_volume_constant=", roof_volume_constant
 
-print len (building_ids)
+print len(building_ids)
