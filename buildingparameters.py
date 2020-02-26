@@ -22,6 +22,9 @@ roof_orientation = {}
 roof_volume_constant = {}
 building_ids=[]
 footprints={}
+z_footprints={}
+z_max_body={}
+z_max_roof={}
 
 # --------------------------------------------------------------#
 # funcions
@@ -47,8 +50,9 @@ def hight_of_object(coords):
 
     zcoords.sort()
     c = abs(zcoords[1] - zcoords[0])
-    # if there is 3 variables in list find first one (because gabled roof have wall up to roof)
-    coords_max = zcoords[-1]  # return max z coords
+    # if there is 3 variables in list find first one (because gabled roof have wall up to roof)[-1]
+    # but we need coord [1]
+    coords_max = zcoords[1]  # return max z coords
     return c, coords_max
 
 
@@ -136,10 +140,12 @@ def roof_volumes(footprintcoords, rooftype, roofcoords):
     roof_down = []
     list_coords_dupl = []
     c = 0
+    coords_max=0
     # for roof in rooftype:
     if rooftype[0] == "Flat":
         roofvolume = 0
         c = 0
+        coords_max =0
     elif rooftype[0] == 'Shed':
         c, coords_max = hight_of_object(roofcoords)
         a, b, z, area = parameters_of_footprint(footprintcoords)
@@ -185,12 +191,12 @@ def roof_volumes(footprintcoords, rooftype, roofcoords):
 
     else:
         print "unnamed roof type"
-    return roofvolume, c
+    return roofvolume, c,coords_max
 
 
 def allvolume(roofvolume, bodyvolume):
     """Return a volume of all building"""
-    roofvolume, c = roofvolume(footprintcoords, rooftype, roofcoords)
+    roofvolume, c,coord_max = roofvolume(footprintcoords, rooftype, roofcoords)
     bodyvolume = bodyvolume(wallcoords, footprintcoords)
     return roofvolume + bodyvolume
 
@@ -475,7 +481,7 @@ for b in buildings:
     bv = bodyvolume(wallcoords, footprintcoords)
     av = allvolume(roof_volumes, bodyvolume)
     a, b, z, area = parameters_of_footprint(footprintcoords)
-    rv, hr = roof_volumes(footprintcoords, rooftype, roofcoords)
+    rv, hr,roof_coords_max = roof_volumes(footprintcoords, rooftype, roofcoords)
     nb = neighbour_buildings(footprintcoords, anotherbuilding)
     hb, cw_max = hight_of_object(wallcoords)
     # hr,cr_max=hight_of_object(roofcoords)
@@ -532,6 +538,9 @@ for b in buildings:
     roof_volume_constant[ids[0]] = rvc
     roof_types_number[ids[0]] = rtn
     footprints[ids[0]]=area
+    z_footprints[ids[0]] = z
+    z_max_body[ids[0]] = cw_max
+    z_max_roof[ids[0]] = roof_coords_max
 
 print "building_ids=", building_ids
 print "heights=", body_height
@@ -550,5 +559,7 @@ print "body_volume=", body_volume
 print "roof_volume=", roof_volume
 print "building_volume=", building_volume
 print "building_height=", building_height
-
-print len (building_ids)
+print ""
+print "z_footprints=",z_footprints
+print "z_max_body=",z_max_body
+print "z_max_roof=", z_max_roof
