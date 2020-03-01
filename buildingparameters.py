@@ -378,7 +378,7 @@ nsmap = {
     'app': ns_app
 }
 # calling xml
-FULLPATH = "D:\Dokumenty\Diplomka\GML_OBJ\soubory\jeden_blok_2_pks.xml"
+FULLPATH = "D:\Dokumenty\Diplomka\GML_OBJ\soubory\jeden_blok_16.xml"
 
 CITYGML = etree.parse(FULLPATH)
 root = CITYGML.getroot()
@@ -563,3 +563,4 @@ print ""
 print "z_footprints=",z_footprints
 print "z_max_body=",z_max_body
 print "z_max_roof=", z_max_roof
+print len (building_ids)
