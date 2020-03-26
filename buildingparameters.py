@@ -1,12 +1,15 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
+
 import math
 from shapely.geometry import Polygon
 from lxml import etree
-import markup3dmodule
+import markup3dmodule #available at https://github.com/tudelft3d/CityGML2OBJs/blob/master/markup3dmodule.py
+import json
+import sys
 
-# TODO osetrit fce
-# TODO citovat pouzite casti skriptu
+
 # --------------------------------------------------------------#
 # dictionaries
 roof_types = {}
@@ -59,14 +62,13 @@ def hight_of_object(coords):
 def create_edges_from_list_of_connection(connection):
     edges = []
     for i in connection:
+        for a in i:
 
-        for i[0] in i:
-            for a in i:
-                if i[0] != a:
-                    # pks = []
-                    pks = (i[0], a)
+            if a != i[0]:
+                # pks = []
+                pks = (i[0], a)
 
-                    edges.append(pks)
+                edges.append(pks)
 
     return (edges)
 
@@ -75,9 +77,7 @@ def create_edges_from_list_of_connection(connection):
 # IN OOP
 def parameters_of_footprint(footprintcoords):
     """In the list of lists of foodprint coordinates return side a,b and its area"""
-    # TODO ohlidat aby souradnice obsahovaly pouze hodnoty obdelniku, aby byli na vstupu v souradnicich duplicitni hodnoty - zaokrouhlovani
-    # TODO z souřadnice
-    # TODO osetrit ze x a y podstavy jsou rovnobezne s coord systemem, prozatim mam strany rovnobezne se sourad. systemem
+
 
     xcoords_duplicate = []
     for i in footprintcoords:
@@ -103,10 +103,6 @@ def parameters_of_footprint(footprintcoords):
         area = a * b
     else:
         print "Polygon contain more than 4 vertices, not valid"
-        # TODO jak to zakoncit
-        a = 0
-        b = 0
-        area = 0
 
     zcoords_duplicate = []
     for i in footprintcoords:
@@ -116,9 +112,6 @@ def parameters_of_footprint(footprintcoords):
     return a, b, z, area
 
 
-# par= parameters_of_foodprint(e)
-# print par
-
 
 def bodyvolume(wallcoords, footprintcoords):
     """Return a volume of body building"""
@@ -127,9 +120,6 @@ def bodyvolume(wallcoords, footprintcoords):
     volume = a * b * c
     return volume
 
-
-# roofvolume = 0
-# rooftype = ['gabled']
 
 
 def roof_volumes(footprintcoords, rooftype, roofcoords):
@@ -157,7 +147,6 @@ def roof_volumes(footprintcoords, rooftype, roofcoords):
     elif rooftype[0] == "Pyramidal":
         c, coords_max = hight_of_object(roofcoords)
         a, b, z, area = parameters_of_footprint(footprintcoords)
-        print a, b, z, area
         roofvolume = (a * b * c) / 3
     elif rooftype[0] == "Hipped":
         c, coords_max = hight_of_object(roofcoords)
@@ -185,7 +174,7 @@ def roof_volumes(footprintcoords, rooftype, roofcoords):
         if not a_longer == a:
             b = a
             a = a_longer
-        print a, b
+        #print a, b
         num = (2 * a + a_smaller)
         roofvolume = (b * c * num) / 6
 
@@ -203,7 +192,6 @@ def allvolume(roofvolume, bodyvolume):
 
 def neighbour_buildings(footprintcoords, anotherbuild):
     """Try to find neighbours buildings and return their ID"""
-    building_ID = []
     neighbours_ID = []
     for i in anotherbuild:
         building_ID = i[0][0]
@@ -212,7 +200,6 @@ def neighbour_buildings(footprintcoords, anotherbuild):
         a, b, z, area = parameters_of_footprint(footprintcoords)
         bv = (a + b) / 5
         ma = (a * b) / 1.5
-        # print bv
 
         poly1 = Polygon(footprintcoords)
         poly2 = Polygon(coord_build)
@@ -223,7 +210,7 @@ def neighbour_buildings(footprintcoords, anotherbuild):
         p2 = poly2.buffer(buffer_value)
 
         validate = p1.intersection(p2).area
-        # print "val:",validate
+        #print "val:",validate
         if validate > minimum_area:
             neighbours_ID.append(building_ID)
     return neighbours_ID
@@ -234,10 +221,7 @@ def rooforientation(footprintcoords, rooftype, roofcoords):
     roof_orientation = 0
     max_edge = []
     parallel_edge = []
-    list_coords = []
-    roof_up = []
-    roof_down = []
-    c = 0
+
 
     if rooftype[0] == "Flat":
         roof_orientation = 0
@@ -315,8 +299,6 @@ def rooforientation(footprintcoords, rooftype, roofcoords):
             roof_orientation = 0
         else:
             roof_orientation = 9999
-
-
     else:
         print "unnamed roof type"
 
@@ -324,7 +306,7 @@ def rooforientation(footprintcoords, rooftype, roofcoords):
 
 def roof_types_num(rooftype ):
     """Return a volume of the roof"""
-    roofvolume = 0
+    roof_type_number = 0
 
     # for roof in rooftype:
     if rooftype[0] == "Flat":
@@ -343,9 +325,10 @@ def roof_types_num(rooftype ):
     return roof_type_number
 # --------------------------------------------------------------#
 # importing xml files
-# -- Name spaces
-ns_citygml = "http://www.opengis.net/citygml/2.0"
+# importing xml inspired and some part copied from: https://github.com/tudelft3d/CityGML2OBJs
 
+# Name spaces
+ns_citygml = "http://www.opengis.net/citygml/2.0"
 ns_gml = "http://www.opengis.net/gml"
 ns_bldg = "http://www.opengis.net/citygml/building/2.0"
 ns_tran = "http://www.opengis.net/citygml/transportation/2.0"
@@ -377,28 +360,28 @@ nsmap = {
     'brid': ns_brid,
     'app': ns_app
 }
-# calling xml
-FULLPATH = "D:\Dokumenty\Diplomka\GML_OBJ\soubory\jeden_blok_16.xml"
 
+# calling xml
+FULLPATH = sys.argv[3]
 CITYGML = etree.parse(FULLPATH)
 root = CITYGML.getroot()
 cityObjects = []
 buildings = []
 
-# -- Find all instances of cityObjectMember and put them in a list
+# --Find all instances of cityObjectMember and put them in a list
 for obj in root.getiterator('{%s}cityObjectMember' % ns_citygml):
     cityObjects.append(obj)
 
 print "\tThere are", len(cityObjects), "cityObject(s) in this CityGML file"
-# find only Building
+# find only building
 
 for cityObject in cityObjects:
     for child in cityObject.getchildren():
         if child.tag == '{%s}Building' % ns_bldg:
             buildings.append(child)
 
-    # -- Store the buildings as classes
-FILENAME = 'export_dogml_pokus22_BD'
+    # Store the buildings as classes
+FILENAME = 'export'
 
 # create list with footprint and ID of building
 anotherbuilding = []
@@ -426,9 +409,11 @@ for b in buildings:
     anotherbuilding_pre.append(ids)
     anotherbuilding_pre.append(footprintcoords1)
     anotherbuilding.append(anotherbuilding_pre)
-print anotherbuilding
-bld_nb = []
+
+
+
 # finding parameters of building
+bld_nb = []
 for b in buildings:
     ground_walls = []
     walls = []
@@ -459,7 +444,6 @@ for b in buildings:
             storeys.append(child.text)
 
     # finding polygon and his coords
-
     for surface in ground_walls:
         for w in surface.findall('.//{%s}Polygon' % ns_gml):
             a = markup3dmodule.GMLpoints(w)
@@ -475,9 +459,10 @@ for b in buildings:
             a = markup3dmodule.GMLpoints(w)
             roofcoords.append(a)
 
+    # --------------------------------------------------------------#
     # call functions
-    clear_nb = []
 
+    clear_nb = []
     bv = bodyvolume(wallcoords, footprintcoords)
     av = allvolume(roof_volumes, bodyvolume)
     a, b, z, area = parameters_of_footprint(footprintcoords)
@@ -489,18 +474,31 @@ for b in buildings:
     rfo = rooforientation(footprintcoords, rooftype, roofcoords)
     rtn=roof_types_num(rooftype)
 
+    # --------------------------------------------------------------#
+    #calculate roof volume constant
     if rv != 0 and hr != 0:
         rvc = rv / hr
     else:
         rvc = 0
 
-    # bld_nb.append(nb)
-    # cleaning ID of selected building from list of the neigbour buildings
 
+    # cleaning ID of selected building from list of the neigbour buildings
     for som in nb:
         if som != id:
             clear_nb.append(som)
 
+    #create list of building ids
+    bld_nb2 = []
+    bld_nb2.append(ids[0])
+    for jop in clear_nb:
+        bld_nb2.append(jop)
+    bld_nb.append(bld_nb2)
+
+    building_ids.append (ids[0])
+    # --------------------------------------------------------------#
+    #control prints
+
+    """
     print ids
     print rooftype
     print footprintcoords
@@ -517,23 +515,18 @@ for b in buildings:
     print storeys
     print rfo
     print rvc
+    """
+    # --------------------------------------------------------------#
+    #add to dictionaries
 
-    bld_nb2 = []
-    bld_nb2.append(ids[0])
-    for jop in clear_nb:
-        bld_nb2.append(jop)
-    bld_nb.append(bld_nb2)
-
-    building_ids.append (ids[0])
-
-    roof_types[ids[0]] = rooftype[0]  # zkontrolovat jestli opravdu pouzivat IDs nebo jen ID
+    roof_types[ids[0]] = rooftype[0]
     num_storeys[ids[0]] = storeys[0]
     body_volume[ids[0]] = bv
     roof_volume[ids[0]] = rv
     building_volume[ids[0]] = av
     building_height[ids[0]] = hb
     roof_height[ids[0]] = hr
-    body_height[ids[0]] = h_all
+    body_height[ids[0]] = hb
     roof_orientation[ids[0]] = rfo
     roof_volume_constant[ids[0]] = rvc
     roof_types_number[ids[0]] = rtn
@@ -542,10 +535,15 @@ for b in buildings:
     z_max_body[ids[0]] = cw_max
     z_max_roof[ids[0]] = roof_coords_max
 
+
+# --------------------------------------------------------------#
+#print parametrs
+
+edges_c =create_edges_from_list_of_connection(bld_nb)
 print "building_ids=", building_ids
 print "heights=", body_height
 print "footprints=",footprints
-print "edges=", create_edges_from_list_of_connection(bld_nb)
+print "edges=", edges_c
 print "roof_types=",roof_types_number
 print "roof_heights=", roof_height
 print "roof_volume_constant=", roof_volume_constant
@@ -564,3 +562,19 @@ print "z_footprints=",z_footprints
 print "z_max_body=",z_max_body
 print "z_max_roof=", z_max_roof
 print len (building_ids)
+print sum(building_volume.values())
+print "heights=", body_height
+print "roof_heights=", roof_height
+print "roof_volume_constant=", roof_volume_constant
+print "footprints=",footprints
+# --------------------------------------------------------------#
+#create txt file
+
+#serves as input to optimization script
+with open(sys.argv[1], 'w') as fd:
+    fd.write(json.dumps([building_ids, body_height,footprints,edges_c,roof_types_number,roof_height,roof_volume_constant,roof_orientation],edges_c))
+
+#serves as input to visualization script
+with open(sys.argv[2], 'w') as fd:
+    fd.write(json.dumps([z_footprints, z_max_body,z_max_roof]))
+
