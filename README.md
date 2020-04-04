@@ -9,12 +9,12 @@ Script serves for reading xml. building file and counting parameters of building
 
 Python packages:
 
-* math
-* shapely
+* Math
+* Shapely
 * lxml
 * markup3dmodule (available at: available at https://github.com/tudelft3d/CityGML2OBJs/blob/master/markup3dmodule.py)
-* json
-* sys
+* Json
+* Sys
 
 Skript works in Python 2 
 
