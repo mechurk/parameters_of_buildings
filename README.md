@@ -21,6 +21,6 @@ Skript works in Python 2
 
 ## Parameters of script
 
-[1] Name of output text file which serves as input for optimization script (.txt)
-[2] Name of output text file which seves as inpiut for visualization script (.txt)
-[3] Name of xml file with buildings data model
+* [1] Name of output text file which serves as input for optimization script (.txt)
+* [2] Name of output text file which seves as inpiut for visualization script (.txt)
+* [3] Name of xml file with buildings data model
