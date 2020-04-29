@@ -1,6 +1,6 @@
 # Parameters of buildings
 
-First practical part (1/3) of Master's thesis: Generalization of 3D spatial data models (2020).
+First practical part (1/3) of Master's thesis: Generalization of LOD2 building models using the aggregation method (2020).
 
 Script serves for reading .xml building file format and counting parameters of buildings in spatial data model. 
 
